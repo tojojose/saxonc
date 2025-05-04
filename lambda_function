@@ -1,0 +1,36 @@
+import json
+import saxoncpe
+
+def lambda_handler(event, context):
+    try:
+        xml_string = """<root><msg>Hello</msg></root>"""
+        xsl_string = """
+        <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="3.0">
+            <xsl:template match="/root">
+                <html><body><h1><xsl:value-of select="msg"/></h1></body></html>
+            </xsl:template>
+        </xsl:stylesheet>
+        """
+
+        with saxoncpe.PySaxonProcessor(license=False) as proc:
+            xslt_proc = proc.new_xslt30_processor()
+
+            # Compile XSLT from string
+            executable = xslt_proc.compile_stylesheet(stylesheet_text=xsl_string)
+
+            # Parse XML string to XdmNode
+            xml_node = proc.parse_xml(xml_text=xml_string)
+
+            # Transform using ONLY the allowed keyword (xdm_node)
+            result = executable.transform_to_string(xdm_node=xml_node)
+
+            return {
+                "statusCode": 200,
+                "body": result
+            }
+
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "body": f"Transformation failed: {str(e)}"
+        }
